@@ -1,0 +1,13 @@
+{
+  "name": "transbandung-api-test",
+  "version": "1.0.0",
+  "description": "API Integration tests for TransBandung",
+  "main": "api-test.js",
+  "scripts": {
+    "test": "node api-test.js"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "node-fetch": "^2.6.7"
+  }
+}

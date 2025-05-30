@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Tiket - transBandung</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Booking Tiket</h1>
+    <nav class="nav">
+      <a href="/">Dashboard</a>
+      <a href="/user">User</a>
+      <a href="/route">Route & Schedule</a>
+      <a href="/review">Review</a>
+      <a href="/payment">Payment</a>
+    </nav>
+  </div>
+  <div class="container">
+    <h2>Pemesanan Tiket Bus</h2>
+    <form id="bookingForm">
+      <input type="text" id="userId" placeholder="User ID" required>
+      <input type="text" id="routeId" placeholder="Route ID" required>
+      <input type="text" id="scheduleId" placeholder="Schedule ID" required>
+      <button class="btn" type="submit">Pesan Tiket</button>
+    </form>
+    <div id="bookingResult"></div>
+  </div>
+  <script>
+    document.getElementById('bookingForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const userId = document.getElementById('userId').value;
+      const routeId = document.getElementById('routeId').value;
+      const scheduleId = document.getElementById('scheduleId').value;
+      const res = await fetch('http://localhost:4002/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `mutation { createBooking(userId: "${userId}", routeId: "${routeId}", scheduleId: "${scheduleId}") { id userId routeId scheduleId status } }`
+        })
+      });
+      const data = await res.json();
+      document.getElementById('bookingResult').innerText = data.data?.createBooking ? 'Booking sukses! ID: ' + data.data.createBooking.id : 'Gagal booking.';
+    };
+  </script>
+</body>
+</html> 

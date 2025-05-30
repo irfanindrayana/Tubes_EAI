@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Management - transBandung</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>User Management</h1>
+    <nav class="nav">
+      <a href="/">Dashboard</a>
+      <a href="/booking">Booking</a>
+      <a href="/route">Route & Schedule</a>
+      <a href="/review">Review</a>
+      <a href="/payment">Payment</a>
+      <a href="#" id="logoutBtn" style="display:none">Logout</a>
+    </nav>
+  </div>
+  <div class="container">
+    <h2>Register</h2>
+    <form id="registerForm">
+      <input type="text" id="regName" placeholder="Nama" required>
+      <input type="email" id="regEmail" placeholder="Email" required>
+      <input type="password" id="regPassword" placeholder="Password" required>
+      <button class="btn" type="submit">Register</button>
+    </form>
+    <div id="registerResult"></div>
+    <hr>
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input type="email" id="loginEmail" placeholder="Email" required>
+      <input type="password" id="loginPassword" placeholder="Password" required>
+      <button class="btn" type="submit">Login</button>
+    </form>
+    <div id="loginResult"></div>
+    <div id="protectedMenu" style="display:none;margin-top:2rem;">
+      <h3>Menu Khusus User Login</h3>
+      <a class="btn" href="/booking">Booking Tiket</a>
+      <a class="btn" href="/review">Beri Ulasan</a>
+    </div>
+  </div>
+  <script>
+    // Register
+    document.getElementById('registerForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('regName').value;
+      const email = document.getElementById('regEmail').value;
+      const password = document.getElementById('regPassword').value;
+      const res = await fetch('http://localhost:4001/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await res.json();
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        document.getElementById('registerResult').innerText = 'Register sukses!';
+        showProtectedMenu();
+      } else {
+        document.getElementById('registerResult').innerText = data.error || 'Gagal register.';
+      }
+    };
+    // Login
+    document.getElementById('loginForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const res = await fetch('http://localhost:4001/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        document.getElementById('loginResult').innerText = 'Login sukses!';
+        showProtectedMenu();
+      } else {
+        document.getElementById('loginResult').innerText = data.error || 'Gagal login.';
+      }
+    };
+    // Logout
+    document.getElementById('logoutBtn').onclick = function() {
+      localStorage.removeItem('token');
+      hideProtectedMenu();
+    };
+    function showProtectedMenu() {
+      document.getElementById('protectedMenu').style.display = '';
+      document.getElementById('logoutBtn').style.display = '';
+    }
+    function hideProtectedMenu() {
+      document.getElementById('protectedMenu').style.display = 'none';
+      document.getElementById('logoutBtn').style.display = 'none';
+    }
+    // Cek login saat load
+    if (localStorage.getItem('token')) showProtectedMenu();
+    else hideProtectedMenu();
+  </script>
+</body>
+</html> 
