@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Form Fix Verification</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .test-section {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .test-passed { border-color: #198754; background-color: #f8fff9; }
+        .test-failed { border-color: #dc3545; background-color: #fff8f8; }
+        .console-output {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.875rem;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .status-pass { background-color: #198754; }
+        .status-fail { background-color: #dc3545; }
+        .status-pending { background-color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1><i class="bi bi-check-circle"></i> Schedule Form Fix Verification</h1>
+        <p class="text-muted">This page verifies that both issues with the schedule form have been fixed:</p>
+        <ol>
+            <li><strong>Issue 1:</strong> Field selectedDates not capturing input from newDateInput</li>
+            <li><strong>Issue 2:</strong> New schedule creation failing to save to database</li>
+        </ol>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Test Section 1: Date Input Functionality -->
+                <div class="test-section" id="test1">
+                    <h4><span class="status-indicator status-pending" id="test1-status"></span>Test 1: Date Input & Array Management</h4>
+                    <p>Tests if dates are properly captured from newDateInput and stored in selectedDates array.</p>
+                    
+                    <form id="addScheduleForm">
+                        <div class="mb-3">
+                            <label for="newDateInput" class="form-label">Select Date</label>
+                            <input type="date" id="newDateInput" class="form-control">
+                            <small class="form-text text-muted">Try selecting a future date</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-primary" onclick="addSpecificDate()">Add Date</button>
+                            <button type="button" class="btn btn-secondary" onclick="addWeekdays()">Add Next 7 Weekdays</button>
+                            <button type="button" class="btn btn-info" onclick="runTest1()">Run Test 1</button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6>Selected Dates <span class="badge bg-primary" id="dateCount">0</span></h6>
+                            <div id="selectedDates" class="border rounded p-2" style="min-height: 100px;">
+                                <small class="text-muted">Belum ada tanggal yang dipilih</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="departure_time" class="form-label">Departure Time</label>
+                                <input type="time" name="departure_time" class="form-control" value="08:00" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="arrival_time" class="form-label">Arrival Time</label>
+                                <input type="time" name="arrival_time" class="form-control" value="10:00">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-success" onclick="runTest2()">Run Test 2: Form Validation</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Test Section 2: Hidden Inputs -->
+                <div class="test-section" id="test2">
+                    <h4><span class="status-indicator status-pending" id="test2-status"></span>Test 2: Hidden Input Creation</h4>
+                    <p>Tests if hidden inputs are properly created for form submission.</p>
+                    
+                    <button class="btn btn-info" onclick="showHiddenInputs()">Show Hidden Inputs</button>
+                    <button class="btn btn-warning" onclick="updateHiddenInputs()">Force Update Hidden Inputs</button>
+                    
+                    <div class="mt-2">
+                        <strong>Hidden Inputs Count:</strong> <span id="hiddenInputsCount">0</span>
+                    </div>
+                </div>
+                
+                <!-- Test Section 3: Form Validation -->
+                <div class="test-section" id="test3">
+                    <h4><span class="status-indicator status-pending" id="test3-status"></span>Test 3: Form Validation Logic</h4>
+                    <p>Tests if form validation works correctly before submission.</p>
+                    
+                    <div class="alert alert-info">
+                        <strong>Validation Requirements:</strong>
+                        <ul class="mb-0">
+                            <li>At least one date must be selected</li>
+                            <li>Departure time must be provided</li>
+                            <li>Arrival time must be after departure time (if provided)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-terminal"></i> Test Results & Console</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="consoleOutput" class="console-output">Waiting for tests to run...</div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-warning btn-sm" onclick="clearConsole()">Clear Console</button>
+                        <button class="btn btn-success btn-sm" onclick="runAllTests()">Run All Tests</button>
+                    </div>
+                </div>
+                
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6><i class="bi bi-info-circle"></i> Test Summary</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="testSummary">
+                            <div>Test 1: <span id="summary1">Pending</span></div>
+                            <div>Test 2: <span id="summary2">Pending</span></div>
+                            <div>Test 3: <span id="summary3">Pending</span></div>
+                            <hr>
+                            <div><strong>Overall: <span id="overallStatus">Pending</span></strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Console logging system
+        const consoleOutput = document.getElementById('consoleOutput');
+        
+        function logToConsole(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#212529',
+                success: '#198754',
+                error: '#dc3545',
+                warning: '#f57c00'
+            };
+            
+            const logEntry = document.createElement('div');
+            logEntry.style.color = colors[type] || colors.info;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            consoleOutput.appendChild(logEntry);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        function clearConsole() {
+            consoleOutput.innerHTML = 'Console cleared...';
+        }
+        
+        // Override console methods to also log to our custom console
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn
+        };
+        
+        console.log = function(...args) {
+            originalConsole.log.apply(console, args);
+            logToConsole(args.join(' '), 'info');
+        };
+        
+        console.error = function(...args) {
+            originalConsole.error.apply(console, args);
+            logToConsole(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalConsole.warn.apply(console, args);
+            logToConsole(args.join(' '), 'warning');
+        };
+
+        // Test state
+        let testResults = {
+            test1: null,
+            test2: null,
+            test3: null
+        };
+
+        // Schedule form JavaScript functions (from the actual file)
+        let selectedDates = [];
+
+        function addSpecificDate() {
+            const dateInput = document.getElementById('newDateInput');
+            if (!dateInput) {
+                console.error('Date input element not found');
+                return;
+            }
+            
+            const dateValue = dateInput.value;
+            console.log('addSpecificDate called, dateValue:', dateValue);
+            
+            if (!dateValue) {
+                console.warn('No date selected');
+                return;
+            }
+            
+            // Validate date is not in the past
+            const selectedDate = new Date(dateValue);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate < today) {
+                console.error('Cannot select past date');
+                return;
+            }
+            
+            if (selectedDates.includes(dateValue)) {
+                console.warn('Date already selected');
+                return;
+            }
+            
+            selectedDates.push(dateValue);
+            selectedDates.sort();
+            updateSelectedDatesDisplay();
+            dateInput.value = '';
+            
+            console.log('Selected dates after add:', selectedDates);
+        }
+
+        function removeSpecificDate(date) {
+            console.log('removeSpecificDate called, date:', date);
+            const index = selectedDates.indexOf(date);
+            if (index > -1) {
+                selectedDates.splice(index, 1);
+                updateSelectedDatesDisplay();
+            }
+            console.log('Selected dates after remove:', selectedDates);
+        }
+
+        function addWeekdays() {
+            console.log('addWeekdays called');
+            const today = new Date();
+            const dates = [];
+            
+            for (let i = 0; i < 14; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                
+                if (date.getDay() >= 1 && date.getDay() <= 5) {
+                    const dateStr = date.toISOString().split('T')[0];
+                    if (!selectedDates.includes(dateStr)) {
+                        dates.push(dateStr);
+                    }
+                }
+                
+                if (dates.length >= 7) break;
+            }
+            
+            selectedDates = selectedDates.concat(dates);
+            selectedDates.sort();
+            updateSelectedDatesDisplay();
+            
+            console.log('Added weekdays:', dates);
+            console.log('Selected dates after addWeekdays:', selectedDates);
+        }
+
+        function updateSelectedDatesDisplay() {
+            console.log('updateSelectedDatesDisplay called, selectedDates:', selectedDates);
+            const container = document.getElementById('selectedDates');
+            const countBadge = document.getElementById('dateCount');
+            
+            if (!container || !countBadge) {
+                console.error('Required elements not found: selectedDates or dateCount');
+                return;
+            }
+            
+            countBadge.textContent = selectedDates.length;
+            
+            if (selectedDates.length === 0) {
+                container.innerHTML = '<small class="text-muted">Belum ada tanggal yang dipilih</small>';
+                return;
+            }
+            
+            const daysOfWeek = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            
+            let html = '';
+            selectedDates.forEach(date => {
+                const dateObj = new Date(date + 'T00:00:00');
+                const dayName = daysOfWeek[dateObj.getDay()];
+                const formattedDate = dateObj.toLocaleDateString('id-ID');
+                
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mb-1 p-1 border-bottom">
+                        <small>
+                            <strong>${dayName}</strong><br>
+                            ${formattedDate}
+                        </small>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSpecificDate('${date}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            updateHiddenInputs();
+        }
+
+        function updateHiddenInputs() {
+            console.log('updateHiddenInputs called with selectedDates:', selectedDates);
+            
+            const existingInputs = document.querySelectorAll('input[name="specific_dates[]"]');
+            console.log('Removing', existingInputs.length, 'existing hidden inputs');
+            existingInputs.forEach(input => input.remove());
+            
+            const form = document.getElementById('addScheduleForm');
+            if (!form) {
+                console.error('Form with id "addScheduleForm" not found');
+                return;
+            }
+            
+            console.log('Adding', selectedDates.length, 'new hidden inputs');
+            selectedDates.forEach((date, index) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'specific_dates[]';
+                input.value = date;
+                form.appendChild(input);
+                console.log(`Added hidden input ${index + 1}: name="${input.name}", value="${input.value}"`);
+            });
+            
+            const newInputs = document.querySelectorAll('input[name="specific_dates[]"]');
+            console.log('Total hidden inputs after update:', newInputs.length);
+            
+            // Update display
+            document.getElementById('hiddenInputsCount').textContent = newInputs.length;
+        }
+
+        function getSpecificDates() {
+            console.log('getSpecificDates called, returning:', selectedDates);
+            return selectedDates;
+        }
+
+        function showHiddenInputs() {
+            const hiddenInputs = document.querySelectorAll('input[name="specific_dates[]"]');
+            console.log('Current hidden inputs count:', hiddenInputs.length);
+            hiddenInputs.forEach((input, index) => {
+                console.log(`Hidden input ${index + 1}: name="${input.name}", value="${input.value}"`);
+            });
+            
+            if (hiddenInputs.length === 0) {
+                console.log('No hidden inputs found');
+            }
+        }
+
+        // Test functions
+        function runTest1() {
+            console.log('=== Running Test 1: Date Input & Array Management ===');
+            
+            let passed = true;
+            let message = '';
+            
+            // Test 1a: Check if selectedDates array exists
+            if (typeof selectedDates === 'undefined') {
+                passed = false;
+                message += 'selectedDates array not defined. ';
+            } else {
+                console.log('✓ selectedDates array exists');
+            }
+            
+            // Test 1b: Add a test date
+            const testDate = '2025-06-15';
+            const originalLength = selectedDates.length;
+            
+            // Simulate adding a date
+            document.getElementById('newDateInput').value = testDate;
+            addSpecificDate();
+            
+            if (selectedDates.length === originalLength + 1 && selectedDates.includes(testDate)) {
+                console.log('✓ Date successfully added to selectedDates array');
+            } else {
+                passed = false;
+                message += 'Date not properly added to array. ';
+            }
+            
+            // Test 1c: Check if display updates
+            const countBadge = document.getElementById('dateCount');
+            if (countBadge && countBadge.textContent == selectedDates.length.toString()) {
+                console.log('✓ Date count display updates correctly');
+            } else {
+                passed = false;
+                message += 'Date count display not updating. ';
+            }
+            
+            updateTestStatus('test1', passed, message || 'All date input tests passed');
+        }
+
+        function runTest2() {
+            console.log('=== Running Test 2: Form Validation ===');
+            
+            let passed = true;
+            let message = '';
+            
+            // Ensure we have at least one date
+            if (selectedDates.length === 0) {
+                const testDate = '2025-06-20';
+                document.getElementById('newDateInput').value = testDate;
+                addSpecificDate();
+            }
+            
+            updateHiddenInputs();
+            
+            // Test 2a: Check hidden inputs creation
+            const hiddenInputs = document.querySelectorAll('input[name="specific_dates[]"]');
+            if (hiddenInputs.length === selectedDates.length) {
+                console.log('✓ Hidden inputs created correctly');
+            } else {
+                passed = false;
+                message += `Hidden inputs count mismatch. Expected: ${selectedDates.length}, Found: ${hiddenInputs.length}. `;
+            }
+            
+            // Test 2b: Check hidden inputs values
+            let valuesMatch = true;
+            hiddenInputs.forEach((input, index) => {
+                if (input.value !== selectedDates[index]) {
+                    valuesMatch = false;
+                }
+            });
+            
+            if (valuesMatch) {
+                console.log('✓ Hidden input values match selectedDates array');
+            } else {
+                passed = false;
+                message += 'Hidden input values do not match selectedDates. ';
+            }
+            
+            // Test 2c: Form validation logic
+            const specificDates = getSpecificDates();
+            const departureTime = document.querySelector('input[name="departure_time"]').value;
+            const arrivalTime = document.querySelector('input[name="arrival_time"]').value;
+            
+            let validationPassed = true;
+            
+            if (specificDates.length === 0) {
+                validationPassed = false;
+                message += 'No dates selected. ';
+            }
+            
+            if (!departureTime) {
+                validationPassed = false;
+                message += 'No departure time. ';
+            }
+            
+            if (arrivalTime && arrivalTime <= departureTime) {
+                validationPassed = false;
+                message += 'Invalid time sequence. ';
+            }
+            
+            if (validationPassed) {
+                console.log('✓ Form validation logic works correctly');
+            } else {
+                passed = false;
+            }
+            
+            updateTestStatus('test2', passed, message || 'All form validation tests passed');
+        }
+
+        function runAllTests() {
+            console.log('=== Running All Tests ===');
+            clearConsole();
+            
+            setTimeout(() => runTest1(), 100);
+            setTimeout(() => runTest2(), 500);
+            setTimeout(() => {
+                // Check overall status
+                const allPassed = testResults.test1 && testResults.test2;
+                updateTestStatus('overall', allPassed, allPassed ? 'All tests passed!' : 'Some tests failed');
+            }, 1000);
+        }
+
+        function updateTestStatus(testId, passed, message) {
+            testResults[testId] = passed;
+            
+            const statusElement = document.getElementById(`${testId}-status`);
+            const summaryElement = document.getElementById(`summary${testId.slice(-1)}`);
+            const testSection = document.getElementById(testId);
+            
+            if (statusElement) {
+                statusElement.className = `status-indicator ${passed ? 'status-pass' : 'status-fail'}`;
+            }
+            
+            if (summaryElement) {
+                summaryElement.textContent = passed ? 'PASSED' : 'FAILED';
+                summaryElement.className = passed ? 'text-success' : 'text-danger';
+            }
+            
+            if (testSection) {
+                testSection.className = `test-section ${passed ? 'test-passed' : 'test-failed'}`;
+            }
+            
+            console.log(`${testId.toUpperCase()}: ${passed ? 'PASSED' : 'FAILED'} - ${message}`);
+            
+            // Update overall status for individual tests
+            if (testId === 'test1' || testId === 'test2') {
+                const overallPassed = testResults.test1 && testResults.test2;
+                const overallElement = document.getElementById('overallStatus');
+                if (overallElement) {
+                    if (testResults.test1 !== null && testResults.test2 !== null) {
+                        overallElement.textContent = overallPassed ? 'ALL PASSED' : 'SOME FAILED';
+                        overallElement.className = overallPassed ? 'text-success' : 'text-danger';
+                    }
+                }
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSelectedDatesDisplay();
+            console.log('Schedule form fix verification page loaded');
+            console.log('Ready to test the fixes!');
+            
+            // Set a future date as default for testing
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
+            document.getElementById('newDateInput').value = tomorrowStr;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Schedule Form Functions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .console-output {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: monospace;
+            font-size: 0.875rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Test Schedule Form Functions</h2>
+        <p class="text-muted">This page tests the JavaScript functions for the schedule form to ensure they work correctly.</p>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Date Input Test</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="addScheduleForm">
+                            <div class="mb-3">
+                                <label for="newDateInput" class="form-label">Select Date</label>
+                                <input type="date" id="newDateInput" class="form-control">
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="addSpecificDate()">Add Date</button>
+                            <button type="button" class="btn btn-secondary" onclick="addWeekdays()">Add Next 7 Weekdays</button>
+                            
+                            <div class="mt-3">
+                                <h6>Selected Dates <span class="badge bg-primary" id="dateCount">0</span></h6>
+                                <div id="selectedDates" class="border rounded p-2" style="min-height: 100px;">
+                                    <small class="text-muted">Belum ada tanggal yang dipilih</small>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <label for="departure_time" class="form-label">Departure Time</label>
+                                <input type="time" name="departure_time" class="form-control" required>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <label for="arrival_time" class="form-label">Arrival Time</label>
+                                <input type="time" name="arrival_time" class="form-control">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-success mt-3">Test Form Submission</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Debug Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-info btn-sm" onclick="showHiddenInputs()">Show Hidden Inputs</button>
+                        <button class="btn btn-warning btn-sm" onclick="clearConsole()">Clear Console</button>
+                        
+                        <div id="consoleOutput" class="console-output">
+                            Console output will appear here...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Redirect console.log to our custom output
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const consoleOutput = document.getElementById('consoleOutput');
+        
+        function logToCustomConsole(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type === 'error' ? 'text-danger' : 'text-dark';
+            logEntry.innerHTML = `<small class="text-muted">[${timestamp}]</small> ${message}`;
+            consoleOutput.appendChild(logEntry);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            logToCustomConsole(args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            logToCustomConsole(args.join(' '), 'error');
+        };
+
+        // Schedule form JavaScript functions (copied from the actual file)
+        let selectedDates = [];
+
+        function addSpecificDate() {
+            const dateInput = document.getElementById('newDateInput');
+            if (!dateInput) {
+                console.error('Date input element not found');
+                alert('Error: Elemen input tanggal tidak ditemukan');
+                return;
+            }
+            
+            const dateValue = dateInput.value;
+            
+            console.log('addSpecificDate called, dateValue:', dateValue);
+            
+            if (!dateValue) {
+                alert('Silakan pilih tanggal terlebih dahulu.');
+                return;
+            }
+            
+            // Validate date is not in the past
+            const selectedDate = new Date(dateValue);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate < today) {
+                alert('Tidak dapat memilih tanggal yang sudah lewat.');
+                return;
+            }
+            
+            if (selectedDates.includes(dateValue)) {
+                alert('Tanggal tersebut sudah dipilih.');
+                return;
+            }
+            
+            selectedDates.push(dateValue);
+            selectedDates.sort(); // Sort dates
+            updateSelectedDatesDisplay();
+            dateInput.value = ''; // Clear input
+            
+            console.log('Selected dates after add:', selectedDates);
+        }
+
+        function removeSpecificDate(date) {
+            console.log('removeSpecificDate called, date:', date);
+            const index = selectedDates.indexOf(date);
+            if (index > -1) {
+                selectedDates.splice(index, 1);
+                updateSelectedDatesDisplay();
+            }
+            console.log('Selected dates after remove:', selectedDates);
+        }
+
+        function addWeekdays() {
+            console.log('addWeekdays called');
+            const today = new Date();
+            const dates = [];
+            
+            // Add next 7 weekdays (Monday to Friday)
+            for (let i = 0; i < 14; i++) { // Check 14 days to get 7 weekdays
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                
+                // Check if it's a weekday (Monday = 1, Friday = 5)
+                if (date.getDay() >= 1 && date.getDay() <= 5) {
+                    const dateStr = date.toISOString().split('T')[0];
+                    if (!selectedDates.includes(dateStr)) {
+                        dates.push(dateStr);
+                    }
+                }
+                
+                if (dates.length >= 7) break; // Stop after getting 7 weekdays
+            }
+            
+            selectedDates = selectedDates.concat(dates);
+            selectedDates.sort();
+            updateSelectedDatesDisplay();
+            
+            console.log('Added weekdays:', dates);
+            console.log('Selected dates after addWeekdays:', selectedDates);
+        }
+
+        function updateSelectedDatesDisplay() {
+            console.log('updateSelectedDatesDisplay called, selectedDates:', selectedDates);
+            const container = document.getElementById('selectedDates');
+            const countBadge = document.getElementById('dateCount');
+            
+            if (!container || !countBadge) {
+                console.error('Required elements not found: selectedDates or dateCount');
+                return;
+            }
+            
+            countBadge.textContent = selectedDates.length;
+            
+            if (selectedDates.length === 0) {
+                container.innerHTML = '<small class="text-muted">Belum ada tanggal yang dipilih</small>';
+                return;
+            }
+            
+            const daysOfWeek = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            
+            let html = '';
+            selectedDates.forEach(date => {
+                const dateObj = new Date(date + 'T00:00:00');
+                const dayName = daysOfWeek[dateObj.getDay()];
+                const formattedDate = dateObj.toLocaleDateString('id-ID');
+                
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mb-1 p-1 border-bottom">
+                        <small>
+                            <strong>${dayName}</strong><br>
+                            ${formattedDate}
+                        </small>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSpecificDate('${date}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Update hidden inputs for form submission
+            updateHiddenInputs();
+        }
+
+        function updateHiddenInputs() {
+            console.log('updateHiddenInputs called with selectedDates:', selectedDates);
+            
+            // Remove existing hidden inputs
+            const existingInputs = document.querySelectorAll('input[name="specific_dates[]"]');
+            console.log('Removing', existingInputs.length, 'existing hidden inputs');
+            existingInputs.forEach(input => input.remove());
+            
+            // Add new hidden inputs
+            const form = document.getElementById('addScheduleForm');
+            if (!form) {
+                console.error('Form with id "addScheduleForm" not found');
+                return;
+            }
+            
+            console.log('Adding', selectedDates.length, 'new hidden inputs');
+            selectedDates.forEach((date, index) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'specific_dates[]';
+                input.value = date;
+                form.appendChild(input);
+                console.log(`Added hidden input ${index + 1}: name="${input.name}", value="${input.value}"`);
+            });
+            
+            // Verify inputs were added
+            const newInputs = document.querySelectorAll('input[name="specific_dates[]"]');
+            console.log('Total hidden inputs after update:', newInputs.length);
+            
+            console.log('Hidden inputs updated, selectedDates count:', selectedDates.length);
+        }
+
+        function getSpecificDates() {
+            console.log('getSpecificDates called, returning:', selectedDates);
+            return selectedDates;
+        }
+
+        // Test helper functions
+        function showHiddenInputs() {
+            const hiddenInputs = document.querySelectorAll('input[name="specific_dates[]"]');
+            console.log('Current hidden inputs count:', hiddenInputs.length);
+            hiddenInputs.forEach((input, index) => {
+                console.log(`Hidden input ${index + 1}: name="${input.name}", value="${input.value}"`);
+            });
+            
+            if (hiddenInputs.length === 0) {
+                console.log('No hidden inputs found');
+            }
+        }
+
+        function clearConsole() {
+            consoleOutput.innerHTML = 'Console cleared...';
+        }
+
+        // Form submission handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const scheduleForm = document.getElementById('addScheduleForm');
+            
+            if (scheduleForm) {
+                scheduleForm.addEventListener('submit', function(e) {
+                    e.preventDefault(); // Prevent actual submission for testing
+                    
+                    console.log('Form submission started');
+                    
+                    // Make sure hidden inputs are updated before validation
+                    updateHiddenInputs();
+                    
+                    // Validate specific dates
+                    const specificDates = getSpecificDates();
+                    
+                    if (specificDates.length === 0) {
+                        alert('Anda harus memilih setidaknya satu tanggal untuk jadwal.');
+                        console.log('Form validation failed: No dates selected');
+                        return false;
+                    }
+                    
+                    // Validate departure and arrival times
+                    const departureTime = document.querySelector('input[name="departure_time"]').value;
+                    const arrivalTime = document.querySelector('input[name="arrival_time"]').value;
+                    
+                    if (!departureTime) {
+                        alert('Waktu berangkat harus diisi.');
+                        console.log('Form validation failed: No departure time');
+                        return false;
+                    }
+                    
+                    if (arrivalTime && arrivalTime <= departureTime) {
+                        alert('Waktu tiba harus lebih besar dari waktu berangkat.');
+                        console.log('Form validation failed: Invalid time sequence');
+                        return false;
+                    }
+                    
+                    console.log('Form validation passed successfully!');
+                    console.log('Form submitted with dates:', specificDates);
+                    console.log('Departure time:', departureTime);
+                    console.log('Arrival time:', arrivalTime);
+                    
+                    // Show final hidden inputs
+                    showHiddenInputs();
+                    
+                    alert('Form validation successful! Check console for details.');
+                    return true;
+                });
+            }
+            
+            // Initialize display
+            updateSelectedDatesDisplay();
+            console.log('Test page initialized successfully');
+        });
+    </script>
+</body>
+</html>

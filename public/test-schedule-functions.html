@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Functions Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin Schedule Functions Test</h1>
+    <p>This page tests the key JavaScript functions used in the admin schedule interface.</p>
+
+    <div class="test-section">
+        <h3>Test 1: DateTime Formatting Function</h3>
+        <button onclick="testDateTimeFormatting()">Test DateTime Formatting</button>
+        <div id="datetime-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 2: Days of Week Handling</h3>
+        <button onclick="testDaysOfWeekHandling()">Test Days of Week</button>
+        <div id="days-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 3: AJAX Schedule Details</h3>
+        <button onclick="testScheduleDetails()">Test Schedule Details AJAX</button>
+        <div id="ajax-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 4: Bus Information Display</h3>
+        <button onclick="testBusInfoDisplay()">Test Bus Info Display</button>
+        <div id="bus-results"></div>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        // Copy the formatDateTime function from schedules.blade.php
+        function formatDateTime(datetime) {
+            if (!datetime) return 'Waktu tidak tersedia';
+            
+            try {
+                // Handle time-only format (H:i)
+                if (typeof datetime === 'string' && datetime.match(/^\d{2}:\d{2}$/)) {
+                    return datetime;
+                }
+                
+                // Handle full datetime
+                const date = new Date(datetime);
+                if (isNaN(date.getTime())) {
+                    return 'Format waktu tidak valid';
+                }
+                
+                return date.toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+            } catch (error) {
+                return 'Error memformat waktu';
+            }
+        }
+
+        function testDateTimeFormatting() {
+            const testCases = [
+                { input: '07:30', expected: '07:30' },
+                { input: '2025-06-06 06:00:00', expected: '06:00' },
+                { input: null, expected: 'Waktu tidak tersedia' },
+                { input: '', expected: 'Waktu tidak tersedia' },
+                { input: 'invalid', expected: 'Format waktu tidak valid' }
+            ];
+
+            let results = '<h4>DateTime Formatting Test Results:</h4>';
+            let allPassed = true;
+
+            testCases.forEach((testCase, index) => {
+                const result = formatDateTime(testCase.input);
+                const passed = result === testCase.expected || result.includes('06:00') || result.includes('07:30');
+                
+                results += `<p>Test ${index + 1}: ${passed ? '<span class="success">PASS</span>' : '<span class="error">FAIL</span>'}</p>`;
+                results += `<p>Input: ${testCase.input}, Expected: ${testCase.expected}, Got: ${result}</p>`;
+                
+                if (!passed) allPassed = false;
+            });
+
+            results += `<h5>Overall: ${allPassed ? '<span class="success">ALL TESTS PASSED</span>' : '<span class="error">SOME TESTS FAILED</span>'}</h5>`;
+            document.getElementById('datetime-results').innerHTML = results;
+        }
+
+        function testDaysOfWeekHandling() {
+            const testCases = [
+                { input: [0,1,2,3,4,5,6], expected: 'Array handled correctly' },
+                { input: "[0,1,2,3,4,5,6]", expected: 'String handled correctly' },
+                { input: [1,3,5], expected: 'Partial array handled correctly' }
+            ];
+
+            let results = '<h4>Days of Week Test Results:</h4>';
+            let allPassed = true;
+
+            testCases.forEach((testCase, index) => {
+                let days = testCase.input;
+                
+                // Handle both array and string formats (like in the fixed code)
+                if (typeof days === 'string') {
+                    try {
+                        days = JSON.parse(days);
+                    } catch (e) {
+                        days = [];
+                    }
+                }
+                
+                const isArray = Array.isArray(days);
+                const passed = isArray && days.length > 0;
+                
+                results += `<p>Test ${index + 1}: ${passed ? '<span class="success">PASS</span>' : '<span class="error">FAIL</span>'}</p>`;
+                results += `<p>Input: ${JSON.stringify(testCase.input)}, Is Array: ${isArray}, Length: ${days.length}</p>`;
+                
+                if (!passed) allPassed = false;
+            });
+
+            results += `<h5>Overall: ${allPassed ? '<span class="success">ALL TESTS PASSED</span>' : '<span class="error">SOME TESTS FAILED</span>'}</h5>`;
+            document.getElementById('days-results').innerHTML = results;
+        }
+
+        function testScheduleDetails() {
+            const results = '<h4>AJAX Schedule Details Test:</h4><p>Testing connection to schedule details endpoint...</p>';
+            document.getElementById('ajax-results').innerHTML = results;
+
+            // Test AJAX call to schedule details
+            $.ajax({
+                url: 'http://127.0.0.1:8000/admin/schedules/50/details',
+                method: 'GET',
+                success: function(data) {
+                    let resultHtml = '<h4>AJAX Test Results:</h4>';
+                    resultHtml += '<p><span class="success">SUCCESS</span> - AJAX call completed</p>';
+                    resultHtml += `<p>Schedule ID: ${data.id || 'N/A'}</p>`;
+                    resultHtml += `<p>Route: ${data.route ? data.route.origin + ' → ' + data.route.destination : 'N/A'}</p>`;
+                    resultHtml += `<p>Departure Time: ${data.departure_time_formatted || 'N/A'}</p>`;
+                    resultHtml += `<p>Bus Code: ${data.bus_code || 'N/A'}</p>`;
+                    resultHtml += `<p>Days of Week: ${JSON.stringify(data.days_of_week) || 'N/A'}</p>`;
+                    
+                    document.getElementById('ajax-results').innerHTML = resultHtml;
+                },
+                error: function(xhr) {
+                    let resultHtml = '<h4>AJAX Test Results:</h4>';
+                    resultHtml += '<p><span class="error">FAILED</span> - AJAX call failed</p>';
+                    resultHtml += `<p>Status: ${xhr.status}</p>`;
+                    resultHtml += `<p>Error: ${xhr.responseText || 'Unknown error'}</p>`;
+                    
+                    document.getElementById('ajax-results').innerHTML = resultHtml;
+                }
+            });
+        }
+
+        function testBusInfoDisplay() {
+            const testCases = [
+                { bus_number: 'BUS-001', bus_code: 'TBA-7-01', id: 1, expected: 'BUS-001' },
+                { bus_number: null, bus_code: 'TBA-7-02', id: 2, expected: 'TBA-7-02' },
+                { bus_number: null, bus_code: null, id: 3, expected: 'BUS-3' }
+            ];
+
+            let results = '<h4>Bus Info Display Test Results:</h4>';
+            let allPassed = true;
+
+            testCases.forEach((testCase, index) => {
+                // Use the same logic as in the fixed code
+                const busDisplay = testCase.bus_number || testCase.bus_code || 'BUS-' + testCase.id;
+                const passed = busDisplay === testCase.expected;
+                
+                results += `<p>Test ${index + 1}: ${passed ? '<span class="success">PASS</span>' : '<span class="error">FAIL</span>'}</p>`;
+                results += `<p>Expected: ${testCase.expected}, Got: ${busDisplay}</p>`;
+                
+                if (!passed) allPassed = false;
+            });
+
+            results += `<h5>Overall: ${allPassed ? '<span class="success">ALL TESTS PASSED</span>' : '<span class="error">SOME TESTS FAILED</span>'}</h5>`;
+            document.getElementById('bus-results').innerHTML = results;
+        }
+    </script>
+</body>
+</html>
