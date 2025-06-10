@@ -14,6 +14,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
+        
+        // Configure CSRF middleware to exclude GraphQL endpoints
+        $middleware->validateCsrfTokens(except: [
+            'graphql',
+            'graphql/*',
+            '/graphql',
+            '/graphql/*',
+            'api/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

@@ -1,0 +1,89 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+README.md
+DOCKER_README.md
+*.txt
+
+# Development files
+.env.example
+.env.docker
+docker-setup.sh
+docker-setup.ps1
+
+# Dependencies
+node_modules
+vendor
+
+# Generated files
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+bootstrap/cache/*
+
+# Test files
+tests/
+.phpunit.result.cache
+phpunit.xml
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# PHP Debug files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Analysis and debug files
+analyze_*.php
+check_*.php
+debug_*.php
+test_*.php
+verify_*.php
+comprehensive_verification.php
+generate_*.php
+manual_test_checklist.md
+quick_db_check.php
+simple_test.php
+
+# Report files
+*_REPORT.md
+*_DOCUMENTATION.md
+*_GUIDE.md
+FIXES_*.md
+FINAL_*.md
+COMPLETE_*.md
+SYSTEM_*.md
+
+# Laravel specific ignores
+.env
+storage/app/public/*
+public/storage
+public/hot
+public/mix-manifest.json
+mix-manifest.json
+
+# Compiled assets (will be built in container)
+public/build/
+public/js/
+public/css/

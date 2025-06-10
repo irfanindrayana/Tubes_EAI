@@ -1,0 +1,135 @@
+version: '3.8'
+
+services:
+  # Laravel Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: transbandung-app
+    container_name: transbandung-app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - ./docker/php/custom.ini:/usr/local/etc/php/conf.d/custom.ini
+    networks:
+      - transbandung-network
+    depends_on:
+      - mysql
+      - redis
+    ports:
+      - "8000:80"
+
+  # Single MySQL Database (with multiple databases)
+  mysql:
+    image: mysql:8.0
+    container_name: transbandung-mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_PASSWORD: root123
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
+      - ./docker/mysql/database.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - transbandung-network
+
+  # Redis for Caching
+  redis:
+    image: redis:7-alpine
+    container_name: transbandung-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - transbandung-network
+
+  # Queue Worker
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: transbandung-queue
+    restart: unless-stopped
+    command: php artisan queue:work --tries=3
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - transbandung-network
+
+  # Scheduler
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: transbandung-scheduler
+    restart: unless-stopped
+    command: /bin/bash -c "while true; do php artisan schedule:run; sleep 60; done"
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - transbandung-network
+
+  # Vite Development Server (untuk frontend asset building)
+  vite:
+    build:
+      context: .
+      dockerfile: docker/vite/ViteDockerfile
+    container_name: transbandung-vite
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./:/var/www/html
+      - /var/www/html/node_modules
+    command: npm run dev
+    networks:
+      - transbandung-network
+
+  # phpMyAdmin untuk database management
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: transbandung-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_ARBITRARY: 1
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: root123
+    depends_on:
+      - mysql
+    networks:
+      - transbandung-network
+
+# Docker Networks
+networks:
+  transbandung-network:
+    driver: bridge
+
+# Volumes
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local

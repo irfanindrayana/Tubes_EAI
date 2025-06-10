@@ -233,7 +233,7 @@
                             <p class="text-muted mb-0">API Calls Today</p>
                         </div>
                         <div class="col-md-3 text-center">
-                            <a href="/graphiql" class="btn btn-dark" target="_blank">
+                            <a href="/graphql-playground" class="btn btn-dark" target="_blank">
                                 <i class="bi bi-play-circle me-1"></i>GraphQL Playground
                             </a>
                         </div>

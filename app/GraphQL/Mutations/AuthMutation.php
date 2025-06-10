@@ -30,7 +30,7 @@ class AuthMutation
         $user = Auth::user();
         
         // Start session for web
-        request()->session()->regenerate();
+        // request()->session()->regenerate();
 
         return $user;
     }

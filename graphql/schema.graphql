@@ -134,9 +134,11 @@ type UserProfile {
 type PurchaseHistory {
     id: ID!
     user_id: ID!
-    booking_id: ID!
+    ticket_id: ID!
     amount: Float!
+    status: String!
     purchase_date: DateTime!
+    ticket_details: String
     created_at: DateTime!
     updated_at: DateTime!
 
@@ -144,16 +146,17 @@ type PurchaseHistory {
     "Associated user"
     user: User! @belongsTo
 
-    "Associated booking"
-    booking: Booking! @belongsTo
+    "Associated ticket"
+    ticket: Booking @belongsTo(relation: "ticket")
 }
 
-"Bus route information"
+"Route information"
 type Route {
     id: ID!
-    name: String!
+    route_name: String!
     origin: String!
     destination: String!
+    stops: [String!]
     distance: Float!
     estimated_duration: Int!
     base_price: Float!
@@ -172,7 +175,7 @@ type Schedule {
     route_id: ID!
     departure_time: DateTime!
     arrival_time: DateTime!
-    bus_capacity: Int!
+    total_seats: Int!
     available_seats: Int!
     price: Float!
     is_active: Boolean!
@@ -195,6 +198,9 @@ type Seat {
     id: ID!
     schedule_id: ID!
     seat_number: String!
+    travel_date: DateTime
+    status: String!
+    booking_id: ID
     is_available: Boolean!
     created_at: DateTime!
     updated_at: DateTime!
@@ -203,8 +209,8 @@ type Seat {
     "Associated schedule"
     schedule: Schedule! @belongsTo
 
-    "Seat bookings"
-    bookings: [Booking!]! @hasMany
+    "Associated booking"
+    booking: Booking @belongsTo
 }
 
 "Booking information"
@@ -212,11 +218,12 @@ type Booking {
     id: ID!
     user_id: ID!
     schedule_id: ID!
-    seat_id: ID!
     booking_code: String!
-    passenger_name: String!
-    passenger_phone: String!
-    total_price: Float!
+    travel_date: DateTime
+    seat_count: Int!
+    seat_numbers: [String!]!
+    passenger_details: String
+    total_amount: Float!
     status: BookingStatus!
     booking_date: DateTime!
     created_at: DateTime!
@@ -229,9 +236,6 @@ type Booking {
     "Associated schedule"
     schedule: Schedule! @belongsTo
 
-    "Associated seat"
-    seat: Seat! @belongsTo
-
     "Booking payment"
     payment: Payment @hasOne
 
@@ -242,15 +246,16 @@ type Booking {
 "Payment information"
 type Payment {
     id: ID!
+    payment_code: String!
     user_id: ID!
     booking_id: ID!
-    payment_method_id: ID!
+    payment_method: String!
     amount: Float!
     status: PaymentStatus!
-    payment_proof: String
+    proof_image: String
     verified_by: ID
     verified_at: DateTime
-    notes: String
+    admin_notes: String
     created_at: DateTime!
     updated_at: DateTime!
 
@@ -260,9 +265,6 @@ type Payment {
 
     "Associated booking"
     booking: Booking! @belongsTo
-
-    "Payment method used"
-    paymentMethod: PaymentMethod! @belongsTo
 
     "Admin who verified"
     verifiedBy: User @belongsTo(relation: "verifier")
@@ -435,29 +437,30 @@ input UpdateUserInput {
 
 "Input for creating booking"
 input CreateBookingInput {
-    schedule_id: ID! @rules(apply: ["required", "exists:ticketing.schedules,id"])
-    seat_id: ID! @rules(apply: ["required", "exists:ticketing.seats,id"])
+    schedule_id: ID! @rules(apply: ["required", "exists:schedules,id"])
+    seat_id: ID! @rules(apply: ["required", "exists:seats,id"])
+    travel_date: DateTime
     passenger_name: String! @rules(apply: ["required", "string", "max:255"])
     passenger_phone: String! @rules(apply: ["required", "string", "max:20"])
 }
 
 "Input for creating payment"
 input CreatePaymentInput {
-    booking_id: ID! @rules(apply: ["required", "exists:ticketing.bookings,id"])
-    payment_method_id: ID! @rules(apply: ["required", "exists:payment.payment_methods,id"])
+    booking_id: ID! @rules(apply: ["required", "exists:bookings,id"])
+    payment_method_id: ID! @rules(apply: ["required", "exists:payment_methods,id"])
     payment_proof: Upload
 }
 
 "Input for creating review"
 input CreateReviewInput {
-    booking_id: ID! @rules(apply: ["required", "exists:ticketing.bookings,id"])
+    booking_id: ID! @rules(apply: ["required", "exists:bookings,id"])
     rating: Int! @rules(apply: ["required", "integer", "min:1", "max:5"])
     comment: String @rules(apply: ["string"])
 }
 
 "Input for creating complaint"
 input CreateComplaintInput {
-    booking_id: ID @rules(apply: ["exists:ticketing.bookings,id"])
+    booking_id: ID @rules(apply: ["exists:bookings,id"])
     subject: String! @rules(apply: ["required", "string", "max:255"])
     description: String! @rules(apply: ["required", "string"])
 }
@@ -477,7 +480,7 @@ input CreateMessageInput {
 type Query {
     # Authentication
     "Get current authenticated user"
-    me: User @auth @field(resolver: "App\\GraphQL\\Queries\\AuthQuery@me")
+    me: User @auth
 
     # User Management Service
     "Find a single user by an identifying attribute."

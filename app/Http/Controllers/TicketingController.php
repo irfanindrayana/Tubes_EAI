@@ -405,6 +405,7 @@ class TicketingController extends Controller
     {
         $seatIds = explode(',', $request->input('seats', ''));
         $seats = Seat::whereIn('id', $seatIds)->get();
+        $travelDate = $request->input('travel_date', now()->format('Y-m-d'));
         
         // Verify all seats are available and belong to the schedule
         foreach($seats as $seat) {
@@ -414,6 +415,6 @@ class TicketingController extends Controller
             }
         }
 
-        return view('ticketing.booking-multiple', compact('schedule', 'seats'));
+        return view('ticketing.booking-multiple', compact('schedule', 'seats', 'travelDate'));
     }
 }
