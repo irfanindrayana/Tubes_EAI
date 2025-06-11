@@ -7,15 +7,16 @@ use App\Models\Message;
 use App\Models\MessageRecipient;
 use App\Models\Notification;
 use App\Models\User;
-use App\Services\InboxService;
+use App\Contracts\InboxServiceInterface;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class InboxController extends Controller
 {
-    protected $inboxService;
+    protected InboxServiceInterface $inboxService;
 
-    public function __construct(InboxService $inboxService)
+    public function __construct(InboxServiceInterface $inboxService)
     {
         $this->middleware('auth');
         $this->inboxService = $inboxService;
@@ -28,17 +29,69 @@ class InboxController extends Controller
     {
         $user = Auth::user();
         
-        // Use the inbox service to get messages with proper relationship handling
-        $messages = $this->inboxService->getInboxMessages($user);
-        $unreadCount = $this->inboxService->getUnreadCount($user);
-
+        // Get messages using the inbox service
+        $messagesData = $this->inboxService->getUserMessages($user->id);
+        
+        // Convert messagesData array to Laravel Collection for view compatibility
+        $messages = collect($messagesData['data'])->map(function ($messageArray) {
+            // Convert array back to Message model-like object
+            $message = new Message($messageArray);
+            
+            // IMPORTANT: Ensure ID is preserved from array
+            if (isset($messageArray['id'])) {
+                $message->id = $messageArray['id'];
+            }
+            
+            // Set relationships
+            if (isset($messageArray['sender'])) {
+                $message->sender = (object) $messageArray['sender'];
+            }
+            
+            if (isset($messageArray['recipients'])) {
+                $message->recipients = collect($messageArray['recipients'])->map(function ($recipient) {
+                    $recipientObj = (object) $recipient;
+                    // Ensure pivot data is available as an object
+                    if (isset($recipient['pivot'])) {
+                        $recipientObj->pivot = (object) $recipient['pivot'];
+                    }
+                    return $recipientObj;
+                });
+            } else {
+                $message->recipients = collect();
+            }
+            
+            // Ensure dates are properly formatted
+            if (isset($messageArray['created_at'])) {
+                $message->created_at = \Carbon\Carbon::parse($messageArray['created_at']);
+            }
+            if (isset($messageArray['updated_at'])) {
+                $message->updated_at = \Carbon\Carbon::parse($messageArray['updated_at']);
+            }
+            
+            return $message;
+        });
+        
+        // Create pagination object
+        $messages = new \Illuminate\Pagination\LengthAwarePaginator(
+            $messages,
+            $messagesData['total'],
+            $messagesData['per_page'],
+            $messagesData['current_page'],
+            ['path' => request()->url()]
+        );
+        
         // Get notifications
-        $notifications = Notification::where('user_id', $user->id)
-            ->latest()
-            ->limit(10)
-            ->get();
+        $notificationsData = $this->inboxService->getUserNotifications($user->id);
+        $notifications = collect($notificationsData)->map(function ($notif) {
+            return (object) $notif;
+        });
+        
+        // Get unread count
+        $unreadCount = MessageRecipient::where('recipient_id', $user->id)
+            ->whereNull('read_at')
+            ->count();
 
-        return view('inbox.index', compact('messages', 'unreadCount', 'notifications'));
+        return view('inbox.index', compact('messages', 'notifications', 'unreadCount'));
     }
 
     /**
@@ -75,10 +128,16 @@ class InboxController extends Controller
         ]);
 
         return DB::transaction(function () use ($request) {
-            $this->inboxService->sendMessage($request->all());
-
-            return redirect()->route('inbox.index')
-                ->with('success', 'Message sent successfully!');
+            $result = $this->inboxService->sendMessage($request->all());
+            
+            if ($result['success']) {
+                return redirect()->route('inbox.index')
+                    ->with('success', 'Message sent successfully!');
+            } else {
+                return redirect()->back()
+                    ->with('error', 'Failed to send message: ' . $result['error'])
+                    ->withInput();
+            }
         });
     }
 

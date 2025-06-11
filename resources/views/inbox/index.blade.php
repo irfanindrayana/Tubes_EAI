@@ -70,12 +70,14 @@
                     @forelse($messages as $message)                        @php
                             $recipients = $message->recipients ?? collect();
                             $isRecipient = $recipients->where('id', Auth::id())->first();
-                            $isUnread = $isRecipient && $isRecipient->pivot && !$isRecipient->pivot->read_at;
+                            $isUnread = $isRecipient && isset($isRecipient->pivot) && !$isRecipient->pivot->read_at;
                             $isSender = $message->sender_id === Auth::id();
-                        @endphp
-                        <div class="d-flex align-items-center p-3 border-bottom message-item {{ $isUnread ? 'bg-light' : '' }}" 
-                             style="cursor: pointer;" 
-                             onclick="window.location.href='{{ route('inbox.show', $message) }}'">
+                        @endphp                        {{-- @dd($message) --}}
+                        @if(isset($message->id) && !empty($message->id))
+                        <div class="d-flex align-items-center p-3 border-bottom message-item {{ $isUnread ? 'bg-light' : '' }}" style="cursor: pointer;" onclick="window.location.href='{{ route('inbox.show', $message->id) }}'">
+                        @else
+                        <div class="d-flex align-items-center p-3 border-bottom message-item {{ $isUnread ? 'bg-light' : '' }}">
+                        @endif
                             
                             <div class="flex-shrink-0 me-3">
                                 <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
@@ -96,9 +98,8 @@
                                         </div>                                        <div class="text-muted small text-truncate" style="max-width: 500px;">
                                             {{ Str::limit(strip_tags($message->content), 80) }}
                                         </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="text-muted small">{{ $message->created_at->diffForHumans() }}</div>                                        <div>
+                                    </div>                                    <div class="text-end">
+                                        <div class="text-muted small">{{ \Carbon\Carbon::parse($message->created_at)->diffForHumans() }}</div><div>
                                             <span class="badge bg-{{ $message->type === 'support' ? 'danger' : ($message->type === 'personal' ? 'primary' : 'info') }}">
                                                 {{ ucfirst($message->type) }}
                                             </span>

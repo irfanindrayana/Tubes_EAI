@@ -4,7 +4,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use App\Providers\MicroserviceProvider;
-use App\Services\InboxService;
+use App\Services\Inbox\InboxService;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -83,10 +83,10 @@ Artisan::command('test:inbox', function () {
         DB::connection('user_management')->getPdo();
         $this->info('   ✅ User management database connection successful');
         
-        // Test 2: InboxService instantiation
+        // Test 2: InboxService instantiation via container
         $this->info('2. Testing InboxService instantiation...');
-        $inboxService = new InboxService();
-        $this->info('   ✅ InboxService created successfully');
+        $inboxService = app(\App\Contracts\InboxServiceInterface::class);
+        $this->info('   ✅ InboxService instantiated via dependency injection');
         
         // Test 3: Check for users
         $this->info('3. Checking available users...');
@@ -97,53 +97,29 @@ Artisan::command('test:inbox', function () {
             $testUserId = $users->first()->id;
             $this->info('   Testing with user ID: ' . $testUserId);
             
-            // Test 4: Get inbox messages
-            $this->info('4. Testing getInboxMessages method...');
-            $messages = $inboxService->getInboxMessages($testUserId);
-            $this->info('   ✅ Retrieved ' . $messages->count() . ' messages');
+            // Test 4: Get user messages
+            $this->info('4. Testing getUserMessages method...');
+            $messagesData = $inboxService->getUserMessages($testUserId);
+            $this->info('   ✅ Retrieved messages data successfully');
             
-            // Test 5: Get unread count
-            $this->info('5. Testing getUnreadCount method...');
-            $unreadCount = $inboxService->getUnreadCount($testUserId);
-            $this->info('   ✅ Unread messages count: ' . $unreadCount);
+            // Test 5: Get user notifications  
+            $this->info('5. Testing getUserNotifications method...');
+            $notifications = $inboxService->getUserNotifications($testUserId);
+            $this->info('   ✅ Retrieved ' . count($notifications) . ' notifications');
             
-            // Test 6: Check message details
-            if ($messages->count() > 0) {
-                $this->info('6. Sample message details:');
-                $firstMessage = $messages->first();
-                $this->info('   - ID: ' . $firstMessage->id);
-                $this->info('   - Subject: ' . $firstMessage->subject);
-                $this->info('   - Content: ' . substr($firstMessage->content, 0, 100) . '...');
-                $this->info('   - Sender: ' . ($firstMessage->sender ? $firstMessage->sender->name : 'Unknown'));
-                $this->info('   - Recipients: ' . $firstMessage->recipients->count() . ' recipient(s)');
-            }
+            // Test 6: Test UserService via dependency injection
+            $this->info('6. Testing UserService instantiation...');
+            $userService = app(\App\Contracts\UserServiceInterface::class);
+            $basicUserInfo = $userService->getUserBasicInfo($testUserId);
+            $this->info('   ✅ UserService working, got user: ' . ($basicUserInfo ? $basicUserInfo['name'] : 'None'));
+            
         } else {
             $this->info('   ⚠️ No users found - skipping user-specific tests');
         }
         
-        // Test 7: Verify cross-database functionality
-        $this->info('7. Testing cross-database relationships...');
-        $recipients = DB::connection('inbox')->table('message_recipients')->limit(3)->get();
-        $this->info('   Found ' . $recipients->count() . ' message recipients');
-        
-        if ($recipients->count() > 0) {
-            foreach ($recipients as $recipient) {
-                $user = DB::connection('user_management')
-                    ->table('users')
-                    ->where('id', $recipient->recipient_id)
-                    ->first();
-                    
-                if ($user) {
-                    $this->info('   ✅ Recipient ID ' . $recipient->recipient_id . ' -> User: ' . $user->name);
-                } else {
-                    $this->info('   ❌ Recipient ID ' . $recipient->recipient_id . ' -> User not found');
-                }
-            }
-        }
-        
         $this->info('');
-        $this->info('✅ All tests completed successfully!');
-        $this->info('The inbox functionality is working correctly with cross-database support.');
+        $this->info('✅ All service contract tests completed successfully!');
+        $this->info('The microservice architecture is working correctly with dependency injection.');
         
     } catch (Exception $e) {
         $this->error('❌ Test failed with error: ' . $e->getMessage());

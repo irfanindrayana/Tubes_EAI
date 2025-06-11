@@ -70,12 +70,12 @@ Route::middleware(['auth'])->group(function () {
     });
     
     // Inbox Routes
-    Route::prefix('inbox')->name('inbox.')->group(function () {
-        Route::get('/', [InboxController::class, 'index'])->name('index');
-        Route::get('/message/{message}', [InboxController::class, 'show'])->name('show');
-        Route::post('/send', [InboxController::class, 'send'])->name('send');
-        Route::post('/mark-as-read/{message}', [InboxController::class, 'markAsRead'])->name('mark-as-read');
-    });
+        Route::prefix('inbox')->name('inbox.')->group(function () {
+            Route::get('/', [InboxController::class, 'index'])->name('index');
+            Route::get('/message/{message}', [InboxController::class, 'show'])->name('show');
+            Route::post('/send', [InboxController::class, 'send'])->name('send');
+            Route::post('/mark-as-read/{message}', [InboxController::class, 'markAsRead'])->name('mark-as-read');
+        });
     
     // Admin Routes
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
