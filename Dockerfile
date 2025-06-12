@@ -47,8 +47,17 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN groupadd -g 1000 www
 RUN useradd -u 1000 -ms /bin/bash -g www www
 
-# Copy application files
-COPY --chown=www:www . /var/www/html
+# Copy application files dengan explicit context
+COPY --chown=www:www composer.json composer.lock /var/www/html/
+COPY --chown=www:www artisan /var/www/html/
+COPY --chown=www:www app/ /var/www/html/app/
+COPY --chown=www:www bootstrap/ /var/www/html/bootstrap/
+COPY --chown=www:www config/ /var/www/html/config/
+COPY --chown=www:www database/ /var/www/html/database/
+COPY --chown=www:www public/ /var/www/html/public/
+COPY --chown=www:www resources/ /var/www/html/resources/
+COPY --chown=www:www routes/ /var/www/html/routes/
+COPY --chown=www:www storage/ /var/www/html/storage/
 
 # Install PHP dependencies
 USER www

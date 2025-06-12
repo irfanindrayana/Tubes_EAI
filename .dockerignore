@@ -15,9 +15,10 @@ DOCKER_README.md
 docker-setup.sh
 docker-setup.ps1
 
-# Dependencies
+# Dependencies (will be installed in container)
 node_modules
-vendor
+# Don't ignore vendor - we need it for Laravel dependencies
+# vendor
 
 # Generated files
 storage/logs/*

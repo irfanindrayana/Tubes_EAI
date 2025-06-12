@@ -22,35 +22,24 @@
     <!-- Animate.css -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
     
-    <!-- jQuery - make sure it loads before Bootstrap -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
-    <!-- Bootstrap JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
-    
-    <!-- Select2 -->
+    <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
 
-    <!-- Scripts -->
+    <!-- Vite Assets (includes Bootstrap CSS/JS and jQuery) -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    
+    <!-- Select2 JS - Load after Vite assets -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
+    
     
     @yield('styles')
     
-    <!-- Ensure Select2 is initialized properly -->
+    <!-- Initialize Select2 after DOM is loaded -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            if (window.jQuery && jQuery().select2) {
-                console.log("jQuery and Select2 loaded correctly");
-            } else {
-                console.error("jQuery or Select2 not loaded");
-                // Attempt to load them if missing
-                if (!window.jQuery) {
-                    console.log("Loading jQuery...");
-                    var script = document.createElement('script');
-                    script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
-                    document.head.appendChild(script);
-                }
+            // Initialize Select2 when available
+            if (window.jQuery && window.jQuery.fn.select2) {
+                window.jQuery('.select2').select2();
             }
         });
     </script>

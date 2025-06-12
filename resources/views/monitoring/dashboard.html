@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trans Bandung Microservices Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #4299e1;
+        }
+        
+        .stat-card p {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .service-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .service-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .service-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .status-healthy {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .status-unhealthy {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .status-unknown {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .service-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .detail-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .detail-value {
+            color: #2d3748;
+            font-weight: 600;
+        }
+        
+        .metrics-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .metrics-header {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .metric-item {
+            text-align: center;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+        
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #4299e1;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .refresh-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(66, 153, 225, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .refresh-button:hover {
+            background: #3182ce;
+            transform: scale(1.1);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .error {
+            background: #fed7d7;
+            color: #742a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .loading {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚌 Trans Bandung Microservices</h1>
+            <p>Real-time Service Monitoring Dashboard</p>
+        </div>
+        
+        <div id="loading" class="loading">
+            Loading service data...
+        </div>
+        
+        <div id="dashboard" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="total-services">-</h3>
+                    <p>Total Services</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="healthy-services">-</h3>
+                    <p>Healthy Services</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="unhealthy-services">-</h3>
+                    <p>Unhealthy Services</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="uptime">-</h3>
+                    <p>Average Uptime</p>
+                </div>
+            </div>
+            
+            <div class="services-grid" id="services-container">
+                <!-- Services will be populated here -->
+            </div>
+            
+            <div class="metrics-section">
+                <div class="metrics-header">System Metrics</div>
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-value" id="response-time">-</div>
+                        <div class="metric-label">Avg Response Time (ms)</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" id="requests-per-minute">-</div>
+                        <div class="metric-label">Requests/Min</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" id="error-rate">-</div>
+                        <div class="metric-label">Error Rate (%)</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" id="last-update">-</div>
+                        <div class="metric-label">Last Update</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <button class="refresh-button" onclick="refreshData()" title="Refresh Data">
+            🔄
+        </button>
+    </div>
+
+    <script>
+        let refreshInterval;
+        const services = ['user-service', 'ticketing-service', 'payment-service', 'inbox-service', 'reviews-service', 'api-gateway'];
+        const servicePorts = {
+            'user-service': 8001,
+            'ticketing-service': 8002,
+            'payment-service': 8003,
+            'inbox-service': 8004,
+            'reviews-service': 8005,
+            'api-gateway': 8000
+        };
+        
+        async function checkServiceHealth(serviceName, port) {
+            try {
+                const response = await fetch(`http://localhost:${port}/health`, {
+                    method: 'GET',
+                    timeout: 5000
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    return {
+                        status: 'healthy',
+                        data: data,
+                        responseTime: Date.now() - startTime
+                    };
+                }
+            } catch (error) {
+                console.warn(`Health check failed for ${serviceName}:`, error);
+            }
+            
+            return {
+                status: 'unhealthy',
+                data: null,
+                responseTime: null
+            };
+        }
+        
+        async function loadServiceData() {
+            const startTime = Date.now();
+            const serviceData = {};
+            let healthyCount = 0;
+            let totalResponseTime = 0;
+            let responseCount = 0;
+            
+            for (const serviceName of services) {
+                const port = servicePorts[serviceName];
+                const healthData = await checkServiceHealth(serviceName, port);
+                
+                serviceData[serviceName] = {
+                    name: serviceName,
+                    port: port,
+                    status: healthData.status,
+                    data: healthData.data,
+                    responseTime: healthData.responseTime
+                };
+                
+                if (healthData.status === 'healthy') {
+                    healthyCount++;
+                    if (healthData.responseTime) {
+                        totalResponseTime += healthData.responseTime;
+                        responseCount++;
+                    }
+                }
+            }
+            
+            return {
+                services: serviceData,
+                stats: {
+                    total: services.length,
+                    healthy: healthyCount,
+                    unhealthy: services.length - healthyCount,
+                    avgResponseTime: responseCount > 0 ? Math.round(totalResponseTime / responseCount) : 0
+                }
+            };
+        }
+        
+        function updateStats(stats) {
+            document.getElementById('total-services').textContent = stats.total;
+            document.getElementById('healthy-services').textContent = stats.healthy;
+            document.getElementById('unhealthy-services').textContent = stats.unhealthy;
+            document.getElementById('uptime').textContent = 
+                Math.round((stats.healthy / stats.total) * 100) + '%';
+            
+            document.getElementById('response-time').textContent = stats.avgResponseTime;
+            document.getElementById('requests-per-minute').textContent = Math.floor(Math.random() * 100) + 50; // Mock data
+            document.getElementById('error-rate').textContent = 
+                Math.round(((stats.total - stats.healthy) / stats.total) * 100 * 100) / 100;
+            document.getElementById('last-update').textContent = 
+                new Date().toLocaleTimeString();
+        }
+        
+        function createServiceCard(serviceName, serviceData) {
+            const statusClass = serviceData.status === 'healthy' ? 'status-healthy' : 
+                               serviceData.status === 'unhealthy' ? 'status-unhealthy' : 'status-unknown';
+            
+            const statusText = serviceData.status === 'healthy' ? '✅ Healthy' :
+                              serviceData.status === 'unhealthy' ? '❌ Unhealthy' : '❓ Unknown';
+            
+            const responseTime = serviceData.responseTime ? `${serviceData.responseTime}ms` : 'N/A';
+            const lastSeen = serviceData.data?.timestamp ? 
+                            new Date(serviceData.data.timestamp).toLocaleTimeString() : 'Never';
+            
+            return `
+                <div class="service-card">
+                    <div class="service-header">
+                        <div class="service-name">${serviceName.replace('-', ' ').toUpperCase()}</div>
+                        <div class="status-badge ${statusClass}">${statusText}</div>
+                    </div>
+                    <div class="service-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Port</span>
+                            <span class="detail-value">${serviceData.port}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Response Time</span>
+                            <span class="detail-value">${responseTime}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Last Seen</span>
+                            <span class="detail-value">${lastSeen}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Version</span>
+                            <span class="detail-value">${serviceData.data?.version || 'Unknown'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function updateServiceCards(services) {
+            const container = document.getElementById('services-container');
+            container.innerHTML = '';
+            
+            for (const [serviceName, serviceData] of Object.entries(services)) {
+                container.innerHTML += createServiceCard(serviceName, serviceData);
+            }
+        }
+        
+        async function refreshData() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('dashboard').style.display = 'none';
+                
+                const data = await loadServiceData();
+                
+                updateStats(data.stats);
+                updateServiceCards(data.services);
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Failed to refresh data:', error);
+                document.getElementById('loading').innerHTML = 
+                    '<div class="error">Failed to load service data. Please check if services are running.</div>';
+            }
+        }
+        
+        function startAutoRefresh() {
+            refreshInterval = setInterval(refreshData, 30000); // Refresh every 30 seconds
+        }
+        
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        }
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshData();
+            startAutoRefresh();
+        });
+        
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+                refreshData();
+            }
+        });
+        
+        // Handle window focus/blur
+        window.addEventListener('focus', () => {
+            refreshData();
+            startAutoRefresh();
+        });
+        
+        window.addEventListener('blur', stopAutoRefresh);
+    </script>
+</body>
+</html>

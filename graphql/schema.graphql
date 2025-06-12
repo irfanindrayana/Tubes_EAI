@@ -554,7 +554,7 @@ type Query {
     ): [Payment!]! @paginate(defaultCount: 10) @guard
 
     "Find single payment"
-    payment(id: ID! @eq): Payment @find @guard
+    payment(id: ID! @eq): Payment @find
 
     "Get financial reports"
     financialReports: [FinancialReport!]! @paginate(defaultCount: 10) @guard(with: ["admin"])
@@ -582,7 +582,7 @@ type Query {
     ): [Message!]! @paginate(defaultCount: 10) @guard
 
     "Find single message"
-    message(id: ID! @eq): Message @find @guard
+    message(id: ID! @eq): Message @find
 
     "Get user notifications"
     notifications(

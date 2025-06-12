@@ -13,7 +13,22 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'service.discovery' => \App\Http\Middleware\ServiceDiscovery::class,
+            'service.aware' => \App\Http\Middleware\ServiceAwareMiddleware::class,
         ]);
+        
+        // Register service discovery middleware globally for microservices
+        if (env('MICROSERVICE_MODE', false)) {
+            $middleware->web(append: [
+                \App\Http\Middleware\ServiceDiscovery::class,
+                \App\Http\Middleware\ServiceAwareMiddleware::class,
+            ]);
+            
+            $middleware->api(append: [
+                \App\Http\Middleware\ServiceDiscovery::class,
+                \App\Http\Middleware\ServiceAwareMiddleware::class,
+            ]);
+        }
         
         // Configure CSRF middleware to exclude GraphQL endpoints
         $middleware->validateCsrfTokens(except: [
